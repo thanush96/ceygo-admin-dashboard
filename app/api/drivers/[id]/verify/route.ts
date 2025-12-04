@@ -10,7 +10,7 @@ export async function POST(
     const body = await req.json();
     const { verified, reason } = body;
 
-    const driverRef = adminDb.collection('users').doc(id);
+    const driverRef = adminDb.collection('driver_profiles').doc(id);
     const driverDoc = await driverRef.get();
 
     if (!driverDoc.exists) {
@@ -18,12 +18,12 @@ export async function POST(
     }
 
     const updateData: any = {
-      'documents.isVerified': verified,
+      isVerified: verified,
       updatedAt: new Date().toISOString(),
     };
 
     if (!verified && reason) {
-      updateData['documents.rejectionReason'] = reason;
+      updateData.rejectionReason = reason;
     }
 
     await driverRef.update(updateData);

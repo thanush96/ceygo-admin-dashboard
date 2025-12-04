@@ -193,7 +193,7 @@ export default function PaymentSettingsPage() {
                   <div className="mt-4 space-y-3">
                     <input
                       type="text"
-                      placeholder="Bank Name"
+                      placeholder="Bank Name *"
                       value={settings.bankTransfer.bankName || ''}
                       onChange={(e) =>
                         setSettings({
@@ -202,10 +202,24 @@ export default function PaymentSettingsPage() {
                         })
                       }
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full text-gray-900"
+                      required
                     />
                     <input
                       type="text"
-                      placeholder="Account Number"
+                      placeholder="Account Name *"
+                      value={settings.bankTransfer.accountName || ''}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          bankTransfer: { ...settings.bankTransfer, accountName: e.target.value },
+                        })
+                      }
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full text-gray-900"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Account Number *"
                       value={settings.bankTransfer.accountNumber || ''}
                       onChange={(e) =>
                         setSettings({
@@ -217,32 +231,30 @@ export default function PaymentSettingsPage() {
                         })
                       }
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full text-gray-900"
+                      required
                     />
                     <input
                       type="text"
-                      placeholder="Account Name"
-                      value={settings.bankTransfer.accountName || ''}
+                      placeholder="Branch (optional)"
+                      value={settings.bankTransfer.branch || ''}
                       onChange={(e) =>
                         setSettings({
                           ...settings,
-                          bankTransfer: { ...settings.bankTransfer, accountName: e.target.value },
+                          bankTransfer: { ...settings.bankTransfer, branch: e.target.value },
                         })
                       }
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full text-gray-900"
                     />
-                    <textarea
-                      placeholder="Transfer Instructions"
-                      value={settings.bankTransfer.instructions || ''}
+                    <input
+                      type="text"
+                      placeholder="SWIFT Code (optional)"
+                      value={settings.bankTransfer.swiftCode || ''}
                       onChange={(e) =>
                         setSettings({
                           ...settings,
-                          bankTransfer: {
-                            ...settings.bankTransfer,
-                            instructions: e.target.value,
-                          },
+                          bankTransfer: { ...settings.bankTransfer, swiftCode: e.target.value },
                         })
                       }
-                      rows={3}
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-full text-gray-900"
                     />
                   </div>

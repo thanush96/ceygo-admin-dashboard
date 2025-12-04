@@ -14,6 +14,7 @@ import {
   LogOut,
   DollarSign,
   FileText,
+  Ticket,
 } from 'lucide-react';
 
 const menuItems = [
@@ -21,6 +22,7 @@ const menuItems = [
   { icon: Users, label: 'Users', href: '/dashboard/users' },
   { icon: Car, label: 'Drivers', href: '/dashboard/drivers' },
   { icon: Calendar, label: 'Bookings', href: '/dashboard/bookings' },
+  { icon: Ticket, label: 'Subscriptions', href: '/dashboard/subscriptions' },
   { icon: CreditCard, label: 'Payment Settings', href: '/dashboard/payment-settings' },
   { icon: DollarSign, label: 'Bank Transfers', href: '/dashboard/bank-transfers' },
   { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },

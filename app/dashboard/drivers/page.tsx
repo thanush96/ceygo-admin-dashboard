@@ -21,10 +21,9 @@ export default function DriversPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      params.append('role', 'driver');
       if (statusFilter !== 'all') params.append('status', statusFilter);
 
-      const response = await fetch(`/api/users?${params.toString()}`);
+      const response = await fetch(`/api/drivers?${params.toString()}`);
       const data = await response.json();
       setDrivers(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -118,8 +117,9 @@ export default function DriversPage() {
   const filteredDrivers = drivers.filter(
     (driver) =>
       driver.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      driver.driverName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       driver.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      driver.vehicle?.plateNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+      driver.vehicleInfo?.plateNumber?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -191,23 +191,23 @@ export default function DriversPage() {
                         />
                       ) : (
                         <span className="text-green-600 font-bold text-lg">
-                          {driver.name?.charAt(0).toUpperCase()}
+                          {(driver.driverName || driver.name)?.charAt(0).toUpperCase()}
                         </span>
                       )}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">{driver.name}</h3>
+                      <h3 className="font-semibold text-gray-900">{driver.driverName || driver.name}</h3>
                       <p className="text-sm text-gray-500">{driver.email}</p>
                     </div>
                   </div>
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      driver.isActive
+                      driver.isAvailable !== false
                         ? 'bg-green-100 text-green-700'
                         : 'bg-red-100 text-red-700'
                     }`}
                   >
-                    {driver.isActive ? 'Active' : 'Inactive'}
+                    {driver.isAvailable !== false ? 'Available' : 'Unavailable'}
                   </span>
                 </div>
 
@@ -216,27 +216,27 @@ export default function DriversPage() {
                     <span className="text-gray-600">Phone:</span>
                     <span className="text-gray-900 font-medium">{driver.phone || 'N/A'}</span>
                   </div>
-                  {driver.vehicle && (
+                  {(driver.vehicleInfo || driver.vehicle) && (
                     <>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Vehicle:</span>
                         <span className="text-gray-900 font-medium">
-                          {driver.vehicle.make} {driver.vehicle.model}
+                          {(driver.vehicleInfo || driver.vehicle).make} {(driver.vehicleInfo || driver.vehicle).model}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Plate:</span>
                         <span className="text-gray-900 font-medium">
-                          {driver.vehicle.plateNumber}
+                          {(driver.vehicleInfo || driver.vehicle).plateNumber}
                         </span>
                       </div>
                     </>
                   )}
-                  {driver.rating && (
+                  {driver.rating !== undefined && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Rating:</span>
                       <span className="text-yellow-600 font-medium">
-                        ⭐ {driver.rating.toFixed(1)}
+                        ⭐ {driver.rating > 0 ? driver.rating.toFixed(1) : 'New'}
                       </span>
                     </div>
                   )}
@@ -244,11 +244,17 @@ export default function DriversPage() {
                     <span className="text-gray-600">Total Trips:</span>
                     <span className="text-gray-900 font-medium">{driver.totalTrips || 0}</span>
                   </div>
+                  {driver.experienceYears && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Experience:</span>
+                      <span className="text-gray-900 font-medium">{driver.experienceYears} years</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                   <div className="flex items-center space-x-2 text-sm">
-                    {driver.documents?.isVerified ? (
+                    {driver.isVerified || driver.documents?.isVerified ? (
                       <span className="flex items-center text-green-600">
                         <CheckCircle size={16} className="mr-1" />
                         Verified
@@ -268,7 +274,7 @@ export default function DriversPage() {
                     >
                       <Eye size={18} />
                     </button>
-                    {!driver.documents?.isVerified && (
+                    {!(driver.isVerified || driver.documents?.isVerified) && (
                       <button
                         onClick={() => handleVerifyDriver(driver.id)}
                         disabled={actionLoading}
@@ -279,14 +285,14 @@ export default function DriversPage() {
                       </button>
                     )}
                     <button
-                      onClick={() => handleToggleStatus(driver.id, driver.isActive)}
+                      onClick={() => handleToggleStatus(driver.id, driver.isAvailable !== false)}
                       disabled={actionLoading}
                       className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
-                        driver.isActive
+                        driver.isAvailable !== false
                           ? 'text-red-600 hover:bg-red-50'
                           : 'text-green-600 hover:bg-green-50'
                       }`}
-                      title={driver.isActive ? 'Deactivate' : 'Activate'}
+                      title={driver.isAvailable !== false ? 'Make Unavailable' : 'Make Available'}
                     >
                       <Ban size={18} />
                     </button>

@@ -10,7 +10,7 @@ export async function POST(
     const body = await req.json();
     const { isActive } = body;
 
-    const driverRef = adminDb.collection('users').doc(id);
+    const driverRef = adminDb.collection('driver_profiles').doc(id);
     const driverDoc = await driverRef.get();
 
     if (!driverDoc.exists) {
@@ -18,7 +18,7 @@ export async function POST(
     }
 
     await driverRef.update({
-      isActive,
+      isAvailable: isActive,
       updatedAt: new Date().toISOString(),
     });
 

@@ -18,13 +18,54 @@ export interface User {
 }
 
 // Driver Types
-export interface Driver extends User {
-  role: 'driver';
-  documents: {
+export interface Driver {
+  id: string;
+  email: string;
+  name?: string;
+  driverName?: string;
+  phone: string;
+  role?: 'driver';
+  isActive?: boolean;
+  profileImageUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  bio?: string;
+  experienceYears?: number;
+  licenseNumber?: string;
+  isAvailable?: boolean;
+  isVerified?: boolean;
+  languages?: string[];
+  specialties?: string[];
+  pricingPackages?: Array<{
+    id: string;
+    name: string;
+    type: string;
+    price: number;
+    description?: string;
+    unit?: string;
+    includedKm?: number;
+    includedHours?: number;
+    extraKmPrice?: number;
+    extraHourPrice?: number;
+    isActive?: boolean;
+  }>;
+  vehicleId?: string | null;
+  vehicleInfo?: {
+    make: string;
+    model: string;
+    year: string | number;
+    plateNumber: string;
+    color: string;
+    type?: string;
+    seats?: number;
+    hasAC?: boolean;
+    features?: string[];
+  };
+  documents?: {
     licenseUrl?: string;
     insuranceUrl?: string;
     vehicleRegistrationUrl?: string;
-    isVerified: boolean;
+    isVerified?: boolean;
   };
   vehicle?: {
     make: string;
@@ -50,6 +91,19 @@ export interface Booking {
   completedAt?: string;
 }
 
+// Subscription Plan Types
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  type: 'weekly' | 'biweekly' | 'monthly';
+  durationDays: number;
+  price: number;
+  description: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Payment Settings Types
 export interface PaymentSettings {
   googlePay: {
@@ -65,6 +119,8 @@ export interface PaymentSettings {
     bankName?: string;
     accountNumber?: string;
     accountName?: string;
+    branch?: string;
+    swiftCode?: string;
     instructions?: string;
   };
 }
