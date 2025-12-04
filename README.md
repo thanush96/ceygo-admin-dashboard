@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CeyGo Admin Dashboard
 
-## Getting Started
+A comprehensive Next.js admin dashboard for managing the CeyGo ride-sharing mobile application. This dashboard provides full control over users, drivers, bookings, payment methods, and bank transfer approvals.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 🎯 Core Features
+- **Dashboard Overview** - Real-time statistics and analytics
+- **User Management** - View, filter, and manage all users
+- **Driver Management** - Approve drivers and verify documents
+- **Booking Management** - Monitor and manage ride bookings
+- **Payment Settings** - Enable/disable payment methods (Google Pay, Apple Pay, Bank Transfer)
+- **Bank Transfer Approval** - Review and approve manual bank transfers
+- **Notification System** - Send push notifications to users
+- **Reports & Analytics** - Generate insights and reports
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 💳 Payment Method Configuration
+Admins can control which payment methods are available in the mobile app:
+- Toggle Google Pay, Apple Pay, and Bank Transfer on/off
+- Configure bank account details for transfers
+- Set custom instructions for users
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🏦 Bank Transfer Workflow
+1. User selects package in mobile app
+2. User transfers money to admin's bank account
+3. User uploads payment proof with reference number
+4. Admin reviews transfer request in dashboard
+5. Admin approves and activates user's subscription
+6. User receives notification of activation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech Stack
 
-## Learn More
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Backend**: Firebase Admin SDK
+- **Database**: Cloud Firestore
+- **Charts**: Recharts
+- **Icons**: Lucide React
 
-To learn more about Next.js, take a look at the following resources:
+## Installation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Navigate to project:
+   \`\`\`bash
+   cd /Users/thanushkanth/Documents/Flutter/ceygo-admin-dashboard
+   \`\`\`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. Install dependencies:
+   \`\`\`bash
+   npm install
+   \`\`\`
 
-## Deploy on Vercel
+3. Create \`.env.local\` file with Firebase credentials
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. Run development server:
+   \`\`\`bash
+   npm run dev
+   \`\`\`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. Open http://localhost:3000
+
+## Default Credentials
+- Email: admin@ceygo.com
+- Password: admin123
+
+⚠️ Change these in production!
+
+## Documentation
+
+See full documentation in the dashboard README for:
+- Detailed setup instructions
+- API endpoints
+- Firestore structure
+- Deployment guide
+
+---
+
+Built for CeyGo Ride-Sharing App
