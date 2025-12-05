@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(
   req: NextRequest,
@@ -20,7 +21,7 @@ export async function POST(
 
     const updateData: any = {
       isVerified: verified,
-      updatedAt: new Date().toISOString(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
 
     if (!verified && reason) {
@@ -37,7 +38,7 @@ export async function POST(
     if (driverProfileDoc.exists) {
       await driverProfileRef.update({
         'documents.isVerified': verified,
-        updatedAt: new Date().toISOString(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
     }
 

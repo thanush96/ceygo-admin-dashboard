@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
 // Admin manually adds subscription to a driver
 export async function POST(
@@ -10,11 +11,18 @@ export async function POST(
     const { id: driverId } = await params;
     const { planId, paymentMethod, transactionId } = await request.json();
 
-    // Verify driver exists
-    const driverDoc = await adminDb.collection('driver_profiles').doc(driverId).get();
+    // Verify driver exists in users collection (primary source of truth)
+    const userDoc = await adminDb.collection('users').doc(driverId).get();
 
-    if (!driverDoc.exists) {
+    if (!userDoc.exists) {
       return NextResponse.json({ error: 'Driver not found' }, { status: 404 });
+    }
+
+    const userData = userDoc.data();
+    
+    // Verify it's actually a driver
+    if (userData?.role !== 'driver') {
+      return NextResponse.json({ error: 'User is not a driver' }, { status: 400 });
     }
 
     // Get subscription plan details
@@ -49,41 +57,41 @@ export async function POST(
     await subscriptionRef.set({
       driverId,
       passType: planData.type,
-      startDate: startDate.toISOString(),
-      expiryDate: expiryDate.toISOString(),
+      startDate: FieldValue.serverTimestamp(),
+      expiryDate: Timestamp.fromDate(expiryDate),
       amount: planData.price,
       paymentMethod: paymentMethod || 'admin_granted',
       transactionId: transactionId || `ADMIN-${Date.now()}`,
       status: 'active',
-      createdAt: new Date().toISOString(),
+      createdAt: FieldValue.serverTimestamp(),
       grantedByAdmin: true,
     });
 
-    // Update driver profile
-    await adminDb
-      .collection('driver_profiles')
-      .doc(driverId)
-      .update({
-        hasActiveSubscription: true,
-        currentSubscriptionId: subscriptionRef.id,
-        subscriptionExpiryDate: expiryDate.toISOString(),
-        isTrialActive: false,
-        updatedAt: new Date().toISOString(),
-      });
-
-    // Update user record if exists
-    const userDoc = await adminDb.collection('users').doc(driverId).get();
-    if (userDoc.exists) {
+    // Update driver profile if it exists
+    const driverProfileDoc = await adminDb.collection('driver_profiles').doc(driverId).get();
+    if (driverProfileDoc.exists) {
       await adminDb
-        .collection('users')
+        .collection('driver_profiles')
         .doc(driverId)
         .update({
           hasActiveSubscription: true,
           currentSubscriptionId: subscriptionRef.id,
-          subscriptionExpiryDate: expiryDate.toISOString(),
-          updatedAt: new Date().toISOString(),
+          subscriptionExpiryDate: Timestamp.fromDate(expiryDate),
+          isTrialActive: false,
+          updatedAt: FieldValue.serverTimestamp(),
         });
     }
+
+    // Update user record (always exists, already verified above)
+    await adminDb
+      .collection('users')
+      .doc(driverId)
+      .update({
+        hasActiveSubscription: true,
+        currentSubscriptionId: subscriptionRef.id,
+        subscriptionExpiryDate: Timestamp.fromDate(expiryDate),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
 
     return NextResponse.json({
       success: true,
