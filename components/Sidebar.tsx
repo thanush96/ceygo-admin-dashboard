@@ -21,13 +21,13 @@ const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
   { icon: Users, label: 'Users', href: '/dashboard/users' },
   { icon: Car, label: 'Drivers', href: '/dashboard/drivers' },
-  { icon: Calendar, label: 'Bookings', href: '/dashboard/bookings' },
+  // { icon: Calendar, label: 'Bookings', href: '/dashboard/bookings' },
   { icon: Ticket, label: 'Subscriptions', href: '/dashboard/subscriptions' },
-  { icon: CreditCard, label: 'Payment Settings', href: '/dashboard/payment-settings' },
-  { icon: DollarSign, label: 'Bank Transfers', href: '/dashboard/bank-transfers' },
-  { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
-  { icon: FileText, label: 'Reports', href: '/dashboard/reports' },
-  { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
+  { icon: CreditCard, label: 'Payment', href: '/dashboard/payment-settings' },
+  // { icon: DollarSign, label: 'Bank Transfers', href: '/dashboard/bank-transfers' },
+  // { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
+  // { icon: FileText, label: 'Reports', href: '/dashboard/reports' },
+  // { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
 ];
 
 export default function Sidebar() {
@@ -35,13 +35,13 @@ export default function Sidebar() {
   const { logout } = useAuth();
 
   return (
-    <aside className="w-64 bg-gray-900 text-white min-h-screen flex flex-col">
-      <div className="p-6 border-b border-gray-800">
+    <aside className="w-64 bg-gray-900 text-white h-screen flex flex-col fixed left-0 top-0">
+      <div className="p-6 border-b border-gray-800 flex-shrink-0">
         <h1 className="text-2xl font-bold">CeyGo Admin</h1>
         <p className="text-sm text-gray-400 mt-1">Management Dashboard</p>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;

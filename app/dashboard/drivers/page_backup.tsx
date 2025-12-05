@@ -16,9 +16,7 @@ import {
   ChevronRight,
   Shield,
   Ticket,
-  ExternalLink,
-  Ban,
-  Car
+  ExternalLink
 } from 'lucide-react';
 
 interface SubscriptionPlan {
@@ -239,16 +237,14 @@ export default function DriversPage() {
           </select>
         </div>
 
-        {/* Drivers List View */}
+        {/* Drivers Grid */}
         {loading ? (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="animate-pulse p-8">
-              <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="h-16 bg-gray-200 rounded"></div>
-                ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white p-6 rounded-xl shadow-sm animate-pulse">
+                <div className="h-40"></div>
               </div>
-            </div>
+            ))}
           </div>
         ) : filteredDrivers.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
@@ -256,166 +252,143 @@ export default function DriversPage() {
             <p className="text-gray-500">No drivers found</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Driver
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Vehicle
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Performance
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredDrivers.map((driver) => (
-                    <tr key={driver.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0">
-                            {driver.profileImageUrl ? (
-                              <img
-                                src={driver.profileImageUrl}
-                                alt={driver.name}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                <span className="text-green-600 font-bold text-sm">
-                                  {(driver.driverName || driver.name)?.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {driver.driverName || driver.name}
-                            </div>
-                            <div className="text-sm text-gray-500">ID: {driver.id.slice(0, 8)}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm">
-                          <div className="text-gray-900">{driver.email}</div>
-                          <div className="text-gray-500">{driver.phone || 'No phone'}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {(driver.vehicleInfo || driver.vehicle) ? (
-                          <div className="text-sm">
-                            <div className="text-gray-900 font-medium">
-                              {(driver.vehicleInfo || driver.vehicle)!.make} {(driver.vehicleInfo || driver.vehicle)!.model}
-                            </div>
-                            <div className="text-gray-500 font-mono">
-                              {(driver.vehicleInfo || driver.vehicle)!.plateNumber}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-400">No vehicle</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-yellow-600 font-medium">
-                              ⭐ {driver.rating && driver.rating > 0 ? driver.rating.toFixed(1) : 'New'}
-                            </span>
-                          </div>
-                          <div className="text-gray-500 mt-1">
-                            {driver.totalTrips || 0} trips
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col space-y-2">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              driver.isActive !== false
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {driver.isActive !== false ? 'Active' : 'Inactive'}
-                          </span>
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              driver.isVerified || driver.documents?.isVerified
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {driver.isVerified || driver.documents?.isVerified ? (
-                              <><CheckCircle size={12} className="mr-1" />Verified</>
-                            ) : (
-                              <><XCircle size={12} className="mr-1" />Unverified</>
-                            )}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => setSelectedDriver(driver)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="View Details"
-                          >
-                            <Eye size={18} />
-                          </button>
-                          {!(driver.isVerified || driver.documents?.isVerified) && (
-                            <button
-                              onClick={() => handleVerifyDriver(driver.id)}
-                              disabled={actionLoading}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
-                              title="Verify Driver"
-                            >
-                              <UserCheck size={18} />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleToggleStatus(driver.id, driver.isActive !== false)}
-                            disabled={actionLoading}
-                            className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
-                              driver.isActive !== false
-                                ? 'text-red-600 hover:bg-red-50'
-                                : 'text-green-600 hover:bg-green-50'
-                            }`}
-                            title={driver.isActive !== false ? 'Deactivate' : 'Activate'}
-                          >
-                            <Ban size={18} />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedDriver(driver);
-                              setShowAddSubscriptionModal(true);
-                            }}
-                            disabled={actionLoading}
-                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
-                            title="Add Subscription"
-                          >
-                            <Plus size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredDrivers.map((driver) => (
+              <div
+                key={driver.id}
+                className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                      {driver.profileImageUrl ? (
+                        <img
+                          src={driver.profileImageUrl}
+                          alt={driver.name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-green-600 font-bold text-lg">
+                          {(driver.driverName || driver.name)?.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{driver.driverName || driver.name}</h3>
+                      <p className="text-sm text-gray-500">{driver.email}</p>
+                    </div>
+                  </div>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      driver.isAvailable !== false
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {driver.isAvailable !== false ? 'Available' : 'Unavailable'}
+                  </span>
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Phone:</span>
+                    <span className="text-gray-900 font-medium">{driver.phone || 'N/A'}</span>
+                  </div>
+                  {(driver.vehicleInfo || driver.vehicle) && (
+                    <>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Vehicle:</span>
+                        <span className="text-gray-900 font-medium">
+                          {(driver.vehicleInfo || driver.vehicle).make} {(driver.vehicleInfo || driver.vehicle).model}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Plate:</span>
+                        <span className="text-gray-900 font-medium">
+                          {(driver.vehicleInfo || driver.vehicle).plateNumber}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {driver.rating !== undefined && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Rating:</span>
+                      <span className="text-yellow-600 font-medium">
+                        ⭐ {driver.rating > 0 ? driver.rating.toFixed(1) : 'New'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Total Trips:</span>
+                    <span className="text-gray-900 font-medium">{driver.totalTrips || 0}</span>
+                  </div>
+                  {driver.experienceYears && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Experience:</span>
+                      <span className="text-gray-900 font-medium">{driver.experienceYears} years</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                  <div className="flex items-center space-x-2 text-sm">
+                    {driver.isVerified || driver.documents?.isVerified ? (
+                      <span className="flex items-center text-green-600">
+                        <CheckCircle size={16} className="mr-1" />
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="flex items-center text-red-600">
+                        <XCircle size={16} className="mr-1" />
+                        Not Verified
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setSelectedDriver(driver)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="View Details"
+                    >
+                      <Eye size={18} />
+                    </button>
+                    {!(driver.isVerified || driver.documents?.isVerified) && (
+                      <button
+                        onClick={() => handleVerifyDriver(driver.id)}
+                        disabled={actionLoading}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+                        title="Verify Driver"
+                      >
+                        <UserCheck size={18} />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleToggleStatus(driver.id, driver.isAvailable !== false)}
+                      disabled={actionLoading}
+                      className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
+                        driver.isAvailable !== false
+                          ? 'text-red-600 hover:bg-red-50'
+                          : 'text-green-600 hover:bg-green-50'
+                      }`}
+                      title={driver.isAvailable !== false ? 'Make Unavailable' : 'Make Available'}
+                    >
+                      <Ban size={18} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedDriver(driver);
+                        setShowAddSubscriptionModal(true);
+                      }}
+                      disabled={actionLoading}
+                      className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
+                      title="Add Subscription"
+                    >
+                      <Plus size={18} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -635,15 +608,15 @@ export default function DriversPage() {
                   </>
                 )}
                 <button
-                  onClick={() => handleToggleStatus(selectedDriver.id, selectedDriver.isActive !== false)}
+                  onClick={() => handleToggleStatus(selectedDriver.id, selectedDriver.isActive)}
                   disabled={actionLoading}
                   className={`px-6 py-2 rounded-lg transition-colors font-medium disabled:opacity-50 ${
-                    selectedDriver.isActive !== false
+                    selectedDriver.isActive
                       ? 'bg-orange-600 text-white hover:bg-orange-700'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
-                  {selectedDriver.isActive !== false ? 'Deactivate' : 'Activate'}
+                  {selectedDriver.isActive ? 'Deactivate' : 'Activate'}
                 </button>
               </div>
             </div>

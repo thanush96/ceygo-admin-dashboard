@@ -3,24 +3,37 @@ import { adminDb } from '@/lib/firebase-admin';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
     const { isActive } = body;
 
-    const driverRef = adminDb.collection('driver_profiles').doc(id);
-    const driverDoc = await driverRef.get();
+    // Check if user exists in users collection
+    const userRef = adminDb.collection('users').doc(id);
+    const userDoc = await userRef.get();
 
-    if (!driverDoc.exists) {
+    if (!userDoc.exists) {
       return NextResponse.json({ error: 'Driver not found' }, { status: 404 });
     }
 
-    await driverRef.update({
-      isAvailable: isActive,
+    // Update users collection
+    await userRef.update({
+      isActive: isActive,
       updatedAt: new Date().toISOString(),
     });
+
+    // Also update driver_profiles if it exists
+    const driverProfileRef = adminDb.collection('driver_profiles').doc(id);
+    const driverProfileDoc = await driverProfileRef.get();
+    
+    if (driverProfileDoc.exists) {
+      await driverProfileRef.update({
+        isAvailable: isActive,
+        updatedAt: new Date().toISOString(),
+      });
+    }
 
     return NextResponse.json({ 
       success: true, 

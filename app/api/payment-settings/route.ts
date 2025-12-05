@@ -15,7 +15,23 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json(doc.data());
+    const data = doc.data();
+    
+    // Transform data to flatten bankDetails for frontend
+    const transformedData = {
+      googlePay: data?.googlePay || { enabled: true },
+      applePay: data?.applePay || { enabled: true },
+      bankTransfer: {
+        enabled: data?.bankTransfer?.enabled || false,
+        bankName: data?.bankTransfer?.bankDetails?.bankName || '',
+        accountName: data?.bankTransfer?.bankDetails?.accountName || '',
+        accountNumber: data?.bankTransfer?.bankDetails?.accountNumber || '',
+        branch: data?.bankTransfer?.bankDetails?.branch || '',
+        swiftCode: data?.bankTransfer?.bankDetails?.swiftCode || '',
+      },
+    };
+
+    return NextResponse.json(transformedData);
   } catch (error) {
     console.error('Error fetching payment settings:', error);
     return NextResponse.json({ error: 'Failed to fetch payment settings' }, { status: 500 });

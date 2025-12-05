@@ -3,14 +3,17 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { User } from '@/types';
-import { Search, Filter, UserCheck, UserX } from 'lucide-react';
+import { Search, Filter, UserCheck, UserX, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchUsers();
@@ -34,11 +37,44 @@ export default function UsersPage() {
     }
   };
 
+  const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
+    setActionLoading(true);
+    try {
+      const response = await fetch(`/api/users/${userId}/toggle-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !currentStatus }),
+      });
+
+      if (response.ok) {
+        fetchUsers();
+      } else {
+        const error = await response.json();
+        alert(`Failed to update status: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error toggling status:', error);
+      alert('Error updating user status');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const filteredUsers = users.filter(
     (user) =>
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Pagination
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilter, statusFilter]);
 
   return (
     <DashboardLayout>
@@ -61,7 +97,7 @@ export default function UsersPage() {
                 placeholder="Search by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
               />
             </div>
           </div>
@@ -69,7 +105,7 @@ export default function UsersPage() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-700"
           >
             <option value="all">All Roles</option>
             <option value="customer">Customer</option>
@@ -80,7 +116,7 @@ export default function UsersPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-700"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -116,10 +152,7 @@ export default function UsersPage() {
                     Phone
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Subscription
+                    Created At
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Actions
@@ -127,7 +160,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
+                {paginatedUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
@@ -143,45 +176,43 @@ export default function UsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          user.role === 'driver'
+                            ? 'bg-green-100 text-green-700'
+                            : user.role === 'admin'
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-blue-100 text-blue-700'
+                        }`}
+                      >
                         {user.role}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-700">{user.phone || '-'}</td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          user.isActive
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
-                      >
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </span>
+                    <td className="px-6 py-4 text-gray-700 text-sm">
+                      {user.createdAt && user.createdAt !== 'Invalid Date'
+                        ? new Date(user.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })
+                        : '-'}
                     </td>
                     <td className="px-6 py-4">
-                      {user.subscription?.isActive ? (
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
-                          {user.subscription.type}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 text-sm">None</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="View Details"
-                        >
-                          <UserCheck size={18} />
-                        </button>
-                        <button
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Deactivate"
-                        >
-                          <UserX size={18} />
-                        </button>
+                      <div className="flex items-center space-x-3">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={user.isActive !== false}
+                            onChange={() => handleToggleStatus(user.id, user.isActive !== false)}
+                            disabled={actionLoading}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                          <span className="ml-3 text-sm font-medium text-gray-700">
+                            {user.isActive !== false ? 'Active' : 'Inactive'}
+                          </span>
+                        </label>
                       </div>
                     </td>
                   </tr>
@@ -191,9 +222,57 @@ export default function UsersPage() {
           </div>
         )}
 
-        <div className="text-sm text-gray-600">
-          Showing {filteredUsers.length} of {users.length} users
-        </div>
+        {/* Pagination */}
+        {filteredUsers.length > 0 && (
+          <div className="bg-white p-4 rounded-xl shadow-sm">
+            {filteredUsers.length > itemsPerPage ? (
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1} to {Math.min(endIndex, filteredUsers.length)} of{' '}
+                  {filteredUsers.length} users
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
+                      const page = i + 1;
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                            currentPage === page
+                              ? 'bg-blue-600 text-white'
+                              : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-600 text-center">
+                Showing all {filteredUsers.length} users (Total: {users.length})
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
