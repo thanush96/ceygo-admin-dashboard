@@ -55,6 +55,7 @@ export async function POST(
     // Create subscription
     const subscriptionRef = adminDb.collection('subscriptions').doc();
     await subscriptionRef.set({
+      id: subscriptionRef.id,
       driverId,
       passType: planData.type,
       startDate: FieldValue.serverTimestamp(),
