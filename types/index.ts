@@ -65,6 +65,9 @@ export interface Driver {
     licenseUrl?: string;
     insuranceUrl?: string;
     vehicleRegistrationUrl?: string;
+    nicUrl?: string;
+    nicFrontUrl?: string;
+    nicBackUrl?: string;
     isVerified?: boolean;
   };
   vehicle?: {
@@ -102,6 +105,21 @@ export interface SubscriptionPlan {
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+// Subscription History Types
+export interface Subscription {
+  id: string;
+  driverId: string;
+  passType: string;
+  startDate: string;
+  expiryDate: string;
+  amount: number;
+  paymentMethod: string;
+  transactionId: string;
+  status: 'active' | 'expired' | 'cancelled';
+  createdAt: string;
+  grantedByAdmin?: boolean;
 }
 
 // Payment Settings Types

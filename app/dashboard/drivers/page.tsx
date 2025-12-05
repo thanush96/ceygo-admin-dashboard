@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Driver } from '@/types';
+import { Driver, Subscription } from '@/types';
 import { 
   Search, 
   CheckCircle, 
@@ -18,7 +18,10 @@ import {
   Ticket,
   ExternalLink,
   Ban,
-  Car
+  Car,
+  Calendar,
+  CreditCard,
+  Trash2
 } from 'lucide-react';
 
 interface SubscriptionPlan {
@@ -38,10 +41,12 @@ export default function DriversPage() {
   const [verificationFilter, setVerificationFilter] = useState<string>('all');
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
-  const [showAddSubscriptionModal, setShowAddSubscriptionModal] = useState(false);
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [transactionId, setTransactionId] = useState<string>('');
+  const [driverSubscriptions, setDriverSubscriptions] = useState<Subscription[]>([]);
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
+  const [showAddSubscriptionForm, setShowAddSubscriptionForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
@@ -49,6 +54,28 @@ export default function DriversPage() {
     fetchDrivers();
     fetchSubscriptionPlans();
   }, [statusFilter, verificationFilter]);
+
+  useEffect(() => {
+    if (selectedDriver) {
+      fetchDriverSubscriptions(selectedDriver.id);
+    }
+  }, [selectedDriver]);
+
+  const fetchDriverSubscriptions = async (driverId: string) => {
+    setLoadingSubscriptions(true);
+    try {
+      const response = await fetch(`/api/drivers/${driverId}/subscriptions`);
+      if (response.ok) {
+        const data = await response.json();
+        setDriverSubscriptions(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error('Error fetching driver subscriptions:', error);
+      setDriverSubscriptions([]);
+    } finally {
+      setLoadingSubscriptions(false);
+    }
+  };
 
   const fetchSubscriptionPlans = async () => {
     try {
@@ -177,11 +204,15 @@ export default function DriversPage() {
 
       if (response.ok) {
         const data = await response.json();
-        alert(`Subscription added successfully! Expires: ${new Date(data.expiryDate).toLocaleDateString()}`);
-        setShowAddSubscriptionModal(false);
+        setShowAddSubscriptionForm(false);
         setSelectedPlan('');
         setTransactionId('');
+        // Refresh subscription history
+        if (selectedDriver) {
+          await fetchDriverSubscriptions(selectedDriver.id);
+        }
         fetchDrivers();
+        alert(`Subscription added successfully! Expires: ${new Date(data.expiryDate).toLocaleDateString()}`);
       } else {
         const error = await response.json();
         alert(`Failed to add subscription: ${error.error}`);
@@ -189,6 +220,39 @@ export default function DriversPage() {
     } catch (error) {
       console.error('Error adding subscription:', error);
       alert('Error adding subscription');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteSubscription = async (subscriptionId: string) => {
+    if (!confirm('Are you sure you want to delete this subscription? This action cannot be undone.')) {
+      return;
+    }
+
+    if (!selectedDriver) return;
+
+    setActionLoading(true);
+    try {
+      const response = await fetch(
+        `/api/drivers/${selectedDriver.id}/subscriptions/${subscriptionId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (response.ok) {
+        // Refresh subscription history
+        await fetchDriverSubscriptions(selectedDriver.id);
+        fetchDrivers();
+        alert('Subscription deleted successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to delete subscription: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting subscription:', error);
+      alert('Error deleting subscription');
     } finally {
       setActionLoading(false);
     }
@@ -398,17 +462,7 @@ export default function DriversPage() {
                           >
                             <Ban size={18} />
                           </button>
-                          <button
-                            onClick={() => {
-                              setSelectedDriver(driver);
-                              setShowAddSubscriptionModal(true);
-                            }}
-                            disabled={actionLoading}
-                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
-                            title="Add Subscription"
-                          >
-                            <Plus size={18} />
-                          </button>
+
                         </div>
                       </td>
                     </tr>
@@ -439,9 +493,84 @@ export default function DriversPage() {
 
               {/* Driver Info */}
               <div className="space-y-6">
+                {/* Driver Profile Information */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Car className="mr-2 text-blue-600" size={20} />
+                    Driver Profile
+                  </h3>
+                  <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-sm">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600">Full Name</label>
+                      <p className="text-gray-900 font-medium">{selectedDriver.driverName || selectedDriver.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600">Email</label>
+                      <p className="text-gray-900 truncate">{selectedDriver.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600">Phone</label>
+                      <p className="text-gray-900">{selectedDriver.phone || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600">License Number</label>
+                      <p className="text-gray-900 font-mono">{selectedDriver.licenseNumber || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600">Experience</label>
+                      <p className="text-gray-900">{selectedDriver.experienceYears ? `${selectedDriver.experienceYears} years` : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600">Status</label>
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          selectedDriver.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {selectedDriver.isActive !== false ? 'Active' : 'Inactive'}
+                        </span>
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          selectedDriver.isAvailable !== false ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {selectedDriver.isAvailable !== false ? 'Available' : 'Unavailable'}
+                        </span>
+                      </div>
+                    </div>
+                    {selectedDriver.bio && (
+                      <div className="col-span-3">
+                        <label className="text-xs font-medium text-gray-600">Bio</label>
+                        <p className="text-gray-900 text-sm">{selectedDriver.bio}</p>
+                      </div>
+                    )}
+                    {selectedDriver.languages && selectedDriver.languages.length > 0 && (
+                      <div className="col-span-3">
+                        <label className="text-xs font-medium text-gray-600">Languages</label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedDriver.languages.map((lang, idx) => (
+                            <span key={idx} className="px-2 py-0.5 bg-white text-gray-700 rounded text-xs border border-gray-300">
+                              {lang}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {selectedDriver.specialties && selectedDriver.specialties.length > 0 && (
+                      <div className="col-span-3">
+                        <label className="text-xs font-medium text-gray-600">Specialties</label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedDriver.specialties.map((specialty, idx) => (
+                            <span key={idx} className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
+                              {specialty}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Personal Information */}
                 <div className="bg-gray-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact & Account</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-600">Name</label>
@@ -456,42 +585,42 @@ export default function DriversPage() {
                       <p className="text-gray-900">{selectedDriver.phone || 'N/A'}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Status</label>
+                      <label className="text-sm font-medium text-gray-600">Verification</label>
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                          selectedDriver.isActive
+                          selectedDriver.documents?.isVerified || selectedDriver.isVerified
                             ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
+                            : 'bg-yellow-100 text-yellow-700'
                         }`}
                       >
-                        {selectedDriver.isActive ? 'Active' : 'Inactive'}
+                        {selectedDriver.documents?.isVerified || selectedDriver.isVerified ? 'Verified' : 'Pending'}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Vehicle Information */}
-                {selectedDriver.vehicle && (
+                {(selectedDriver.vehicle || selectedDriver.vehicleInfo) && (
                   <div className="bg-gray-50 p-6 rounded-lg">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Information</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
                         <label className="text-sm font-medium text-gray-600">Make & Model</label>
                         <p className="text-gray-900 font-medium">
-                          {selectedDriver.vehicle.make} {selectedDriver.vehicle.model}
+                          {(selectedDriver.vehicle?.make || selectedDriver.vehicleInfo?.make)} {(selectedDriver.vehicle?.model || selectedDriver.vehicleInfo?.model)}
                         </p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-600">Year</label>
-                        <p className="text-gray-900">{selectedDriver.vehicle.year}</p>
+                        <p className="text-gray-900">{selectedDriver.vehicle?.year || selectedDriver.vehicleInfo?.year}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-600">Plate Number</label>
-                        <p className="text-gray-900 font-mono">{selectedDriver.vehicle.plateNumber}</p>
+                        <p className="text-gray-900 font-mono">{selectedDriver.vehicle?.plateNumber || selectedDriver.vehicleInfo?.plateNumber}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-600">Color</label>
-                        <p className="text-gray-900">{selectedDriver.vehicle.color}</p>
+                        <p className="text-gray-900">{selectedDriver.vehicle?.color || selectedDriver.vehicleInfo?.color}</p>
                       </div>
                     </div>
                   </div>
@@ -604,7 +733,219 @@ export default function DriversPage() {
                         <span className="text-red-600 text-sm">Not uploaded</span>
                       </div>
                     )}
+
+                    {/* NIC Front */}
+                    {selectedDriver.documents?.nicFrontUrl || selectedDriver.documents?.nicUrl ? (
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="text-blue-600" size={20} />
+                          <span className="text-gray-900">NIC (Front)</span>
+                        </div>
+                        <a
+                          href={selectedDriver.documents.nicFrontUrl || selectedDriver.documents.nicUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-sm"
+                        >
+                          View Document
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="text-gray-400" size={20} />
+                          <span className="text-gray-500">NIC (Front)</span>
+                        </div>
+                        <span className="text-red-600 text-sm">Not uploaded</span>
+                      </div>
+                    )}
+
+                    {/* NIC Back */}
+                    {selectedDriver.documents?.nicBackUrl ? (
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="text-blue-600" size={20} />
+                          <span className="text-gray-900">NIC (Back)</span>
+                        </div>
+                        <a
+                          href={selectedDriver.documents.nicBackUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-sm"
+                        >
+                          View Document
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="text-gray-400" size={20} />
+                          <span className="text-gray-500">NIC (Back)</span>
+                        </div>
+                        <span className="text-red-600 text-sm">Not uploaded</span>
+                      </div>
+                    )}
                   </div>
+                </div>
+
+                {/* Subscription History */}
+                <div className="bg-gray-50 p-6 rounded-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Subscription History</h3>
+                    <button
+                      onClick={() => setShowAddSubscriptionForm(!showAddSubscriptionForm)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center space-x-2"
+                    >
+                      <Plus size={16} />
+                      <span>{showAddSubscriptionForm ? 'Cancel' : 'Add Subscription'}</span>
+                    </button>
+                  </div>
+
+                  {/* Add Subscription Form */}
+                  {showAddSubscriptionForm && (
+                    <div className="bg-white p-4 rounded-lg border-2 border-blue-200 mb-4">
+                      <h4 className="font-semibold text-gray-900 mb-4">Grant New Subscription</h4>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Select Subscription Plan *
+                          </label>
+                          <select
+                            value={selectedPlan}
+                            onChange={(e) => setSelectedPlan(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                          >
+                            <option value="">Choose a plan...</option>
+                            {subscriptionPlans.map((plan) => (
+                              <option key={plan.id} value={plan.id}>
+                                {plan.name} - LKR {plan.price} ({plan.durationDays} days)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Transaction ID (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={transactionId}
+                            onChange={(e) => setTransactionId(e.target.value)}
+                            placeholder="e.g., ADMIN-123456"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Leave blank to auto-generate
+                          </p>
+                        </div>
+
+                        <div className="bg-blue-50 p-3 rounded-lg">
+                          <p className="text-sm text-blue-900">
+                            <strong>Note:</strong> This will grant an active subscription to the driver.
+                          </p>
+                        </div>
+
+                        <div className="flex justify-end space-x-3">
+                          <button
+                            onClick={() => {
+                              setShowAddSubscriptionForm(false);
+                              setSelectedPlan('');
+                              setTransactionId('');
+                            }}
+                            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            disabled={actionLoading}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleAddSubscription(selectedDriver.id)}
+                            disabled={!selectedPlan || actionLoading}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {actionLoading ? 'Adding...' : 'Add Subscription'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {loadingSubscriptions ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    </div>
+                  ) : driverSubscriptions.length > 0 ? (
+                    <div className="space-y-3">
+                      {driverSubscriptions.map((subscription) => (
+                        <div key={subscription.id} className="bg-white p-4 rounded-lg border border-gray-200">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start space-x-3 flex-1">
+                              <Ticket className="text-purple-600 mt-1" size={20} />
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">
+                                  {subscription.passType.charAt(0).toUpperCase() + subscription.passType.slice(1)} Pass
+                                </p>
+                                <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                                  <div className="flex items-center space-x-1">
+                                    <Calendar size={14} />
+                                    <span>{new Date(subscription.startDate).toLocaleDateString()}</span>
+                                  </div>
+                                  <span>→</span>
+                                  <div className="flex items-center space-x-1">
+                                    <Calendar size={14} />
+                                    <span>{new Date(subscription.expiryDate).toLocaleDateString()}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                                  <div className="flex items-center space-x-1">
+                                    <CreditCard size={14} />
+                                    <span>LKR {subscription.amount}</span>
+                                  </div>
+                                  <span>•</span>
+                                  <span>{subscription.paymentMethod}</span>
+                                  {subscription.grantedByAdmin && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="text-blue-600 font-medium">Admin Granted</span>
+                                    </>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Transaction: {subscription.transactionId}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2 ml-4">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  subscription.status === 'active'
+                                    ? 'bg-green-100 text-green-700'
+                                    : subscription.status === 'expired'
+                                    ? 'bg-gray-100 text-gray-700'
+                                    : 'bg-red-100 text-red-700'
+                                }`}
+                              >
+                                {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                              </span>
+                              <button
+                                onClick={() => handleDeleteSubscription(subscription.id)}
+                                disabled={actionLoading}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                title="Delete Subscription"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Ticket className="mx-auto mb-2 text-gray-400" size={32} />
+                      <p>No subscription history</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -650,95 +991,7 @@ export default function DriversPage() {
           </div>
         )}
 
-        {/* Add Subscription Modal */}
-        {showAddSubscriptionModal && selectedDriver && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-lg w-full">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">Add Subscription</h2>
-                  <button
-                    onClick={() => {
-                      setShowAddSubscriptionModal(false);
-                      setSelectedPlan('');
-                      setTransactionId('');
-                    }}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-                <p className="text-gray-600 mt-2">
-                  Grant subscription to: <strong>{selectedDriver.driverName || selectedDriver.name}</strong>
-                </p>
-              </div>
 
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Subscription Plan *
-                  </label>
-                  <select
-                    value={selectedPlan}
-                    onChange={(e) => setSelectedPlan(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  >
-                    <option value="">Choose a plan...</option>
-                    {subscriptionPlans.map((plan) => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.name} - ${plan.price} ({plan.durationDays} days)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Transaction ID (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={transactionId}
-                    onChange={(e) => setTransactionId(e.target.value)}
-                    placeholder="e.g., ADMIN-123456"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Leave blank to auto-generate
-                  </p>
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-blue-900">
-                    <strong>Note:</strong> This will grant an active subscription to the driver.
-                    The subscription will be marked as admin-granted.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setShowAddSubscriptionModal(false);
-                    setSelectedPlan('');
-                    setTransactionId('');
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  disabled={actionLoading}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleAddSubscription(selectedDriver.id)}
-                  disabled={!selectedPlan || actionLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {actionLoading ? 'Adding...' : 'Add Subscription'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </DashboardLayout>
   );

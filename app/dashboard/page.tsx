@@ -31,6 +31,23 @@ interface RecentActivity {
   timestamp: string;
   icon: string;
   color: string;
+  metadata?: {
+    amount?: number;
+    income?: number;
+    fare?: number;
+    customer?: string;
+    driver?: string;
+    driverName?: string;
+    email?: string;
+    phone?: string;
+    role?: string;
+    passType?: string;
+    paymentMethod?: string;
+    pickup?: string;
+    dropoff?: string;
+    status?: string;
+    vehicle?: string;
+  };
 }
 
 export default function DashboardPage() {
@@ -141,7 +158,7 @@ export default function DashboardPage() {
         },
         {
           title: 'Total Revenue',
-          value: `$${(stats.totalRevenue || 0).toLocaleString()}`,
+          value: `LKR ${(stats.totalRevenue || 0).toLocaleString()}`,
           icon: DollarSign,
           color: 'bg-emerald-500',
         },
@@ -226,24 +243,103 @@ export default function DashboardPage() {
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 {recentActivity.map((activity) => {
                   const { Icon, colorClass } = getActivityIcon(activity.icon, activity.color);
+                  const hasIncome = activity.metadata?.income && activity.metadata.income > 0;
+                  
                   return (
                     <div
                       key={activity.id}
-                      className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100"
                     >
                       <div className={`p-2 rounded-full ${colorClass} flex-shrink-0`}>
                         <Icon size={20} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {activity.title}
-                        </p>
-                        <p className="text-sm text-gray-600 truncate">
-                          {activity.description}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {getRelativeTime(activity.timestamp)}
-                        </p>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-gray-900">
+                              {activity.title}
+                            </p>
+                            <p className="text-sm text-gray-600 mt-0.5">
+                              {activity.description}
+                            </p>
+                            
+                            {/* Metadata Display */}
+                            {activity.metadata && (
+                              <div className="mt-2 space-y-1">
+                                {/* Income/Revenue Badge */}
+                                {hasIncome && (
+                                  <div className="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium mr-2">
+                                    <DollarSign size={12} className="mr-1" />
+                                    LKR {activity.metadata.income?.toLocaleString()}
+                                  </div>
+                                )}
+                                
+                                {/* Pass Type */}
+                                {activity.metadata.passType && (
+                                  <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs mr-2">
+                                    {activity.metadata.passType}
+                                  </span>
+                                )}
+                                
+                                {/* Payment Method */}
+                                {activity.metadata.paymentMethod && (
+                                  <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs mr-2">
+                                    {activity.metadata.paymentMethod}
+                                  </span>
+                                )}
+                                
+                                {/* Role Badge */}
+                                {activity.metadata.role && (
+                                  <span className={`inline-block px-2 py-1 rounded text-xs font-medium mr-2 ${
+                                    activity.metadata.role === 'driver' 
+                                      ? 'bg-green-100 text-green-700' 
+                                      : 'bg-blue-100 text-blue-700'
+                                  }`}>
+                                    {activity.metadata.role === 'driver' ? '🚗 Driver' : '👤 Customer'}
+                                  </span>
+                                )}
+                                
+                                {/* Customer & Driver Info for Trips */}
+                                {(activity.metadata.customer || activity.metadata.driver) && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {activity.metadata.customer && (
+                                      <span className="mr-2">👤 {activity.metadata.customer}</span>
+                                    )}
+                                    {activity.metadata.driver && (
+                                      <span>🚗 {activity.metadata.driver}</span>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {/* Location Info */}
+                                {(activity.metadata.pickup || activity.metadata.dropoff) && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    📍 {activity.metadata.pickup || 'N/A'} → {activity.metadata.dropoff || 'N/A'}
+                                  </div>
+                                )}
+                                
+                                {/* Contact Info */}
+                                {(activity.metadata.email || activity.metadata.phone) && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {activity.metadata.email && <span className="mr-2">📧 {activity.metadata.email}</span>}
+                                    {activity.metadata.phone && <span>📱 {activity.metadata.phone}</span>}
+                                  </div>
+                                )}
+                                
+                                {/* Vehicle Info */}
+                                {activity.metadata.vehicle && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    🚙 {activity.metadata.vehicle}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            <p className="text-xs text-gray-400 mt-2">
+                              {getRelativeTime(activity.timestamp)}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
@@ -299,6 +395,8 @@ export default function DashboardPage() {
                 <p className="text-xs text-gray-500 mt-1">Activate & cancel</p>
               </button>
               
+{/*               
+
               <button 
                 onClick={() => router.push('/dashboard/bank-transfers')}
                 className="p-4 border-2 border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all hover:shadow-md group"
@@ -309,7 +407,6 @@ export default function DashboardPage() {
                   {stats?.pendingTransfers || 0} pending
                 </p>
               </button>
-              
               <button 
                 onClick={() => router.push('/dashboard/bookings')}
                 className="p-4 border-2 border-gray-200 rounded-lg hover:border-pink-500 hover:bg-pink-50 transition-all hover:shadow-md group"
@@ -337,7 +434,7 @@ export default function DashboardPage() {
                 <Bell className="mx-auto mb-2 text-red-600 group-hover:scale-110 transition-transform" size={28} />
                 <p className="text-sm font-medium text-gray-900">Notifications</p>
                 <p className="text-xs text-gray-500 mt-1">Send messages</p>
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

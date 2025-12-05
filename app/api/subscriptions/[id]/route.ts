@@ -3,11 +3,11 @@ import { adminDb } from '@/lib/firebase-admin';
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
-    const planId = params.id;
+    const { id: planId } = await params;
 
     const updateData = {
       name: body.name,
@@ -36,10 +36,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const planId = params.id;
+    const { id: planId } = await params;
 
     await adminDb.collection('subscription_plans').doc(planId).delete();
 
